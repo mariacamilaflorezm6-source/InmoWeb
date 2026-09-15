@@ -1,0 +1,143 @@
+<%--
+    utilidades.jspf - Metodos auxiliares reutilizables en todo el proyecto.
+    Se incluye siempre DESPUES de conexion.jspf.
+--%>
+<%@ page import="java.security.MessageDigest, java.text.NumberFormat, java.util.Locale, java.util.regex.Pattern"
+    pageEncoding="UTF-8" %>
+<%!
+    /** Cifra un texto con SHA-256 y lo devuelve en hexadecimal. */
+    public String sha256(String texto) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] resumen = md.digest(texto.getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : resumen) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException("Error al cifrar la clave", ex);
+        }
+    }
+
+    /** Combina correo y clave antes de cifrar (salt sencillo, igual que el DML de prueba). */
+    public String claveCifrada(String correo, String clave) {
+        return sha256(correo.toLowerCase().trim() + ":" + clave);
+    }
+
+    /** Formatea un valor como moneda colombiana: 15000 -> $ 15.000 */
+    public String pesos(double valor) {
+        NumberFormat f = NumberFormat.getInstance(new Locale("es", "CO"));
+        f.setMaximumFractionDigits(0);
+        return "$ " + f.format(valor);
+    }
+
+    public int aEntero(String valor, int porDefecto) {
+        try { return Integer.parseInt(valor.trim()); }
+        catch (Exception ex) { return porDefecto; }
+    }
+
+    public double aDoble(String valor, double porDefecto) {
+        try { return Double.parseDouble(valor.trim().replace(",", ".")); }
+        catch (Exception ex) { return porDefecto; }
+    }
+
+    /** Escapa caracteres HTML para evitar ataques XSS. */
+    public String esc(String texto) {
+        if (texto == null) return "";
+        return texto.replace("&", "&amp;").replace("<", "&lt;")
+                    .replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    private static final Pattern PATRON_CORREO =
+        Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$");
+
+    /** Valida un formato de correo razonable antes de tocar la base de datos. */
+    public boolean esCorreoValido(String correo) {
+        return correo != null && PATRON_CORREO.matcher(correo.trim()).matches();
+    }
+
+    private static final Pattern PATRON_TELEFONO = Pattern.compile("^[0-9]{7,15}$");
+
+    public boolean esTelefonoValido(String telefono) {
+        return telefono != null && PATRON_TELEFONO.matcher(telefono.trim()).matches();
+    }
+
+    /** Colores de Bootstrap para pintar el estado de una propiedad. */
+    public String colorEstadoPropiedad(String estado) {
+        if (estado == null) return "secondary";
+        switch (estado) {
+            case "DISPONIBLE": return "success";
+            case "RESERVADA":  return "warning";
+            case "VENDIDA":    return "dark";
+            case "ARRENDADA":  return "primary";
+            case "INACTIVA":   return "secondary";
+            default:           return "secondary";
+        }
+    }
+
+    /** Colores de Bootstrap para el estado de una cita o solicitud. */
+    public String colorEstadoTramite(String estado) {
+        if (estado == null) return "secondary";
+        switch (estado) {
+            case "SOLICITADA":
+            case "PENDIENTE":  return "warning";
+            case "CONFIRMADA":
+            case "APROBADA":   return "success";
+            case "RECHAZADA":
+            case "CANCELADA":  return "danger";
+            case "REALIZADA":  return "primary";
+            default:           return "secondary";
+        }
+    }
+
+    /**
+     * Devuelve true si el texto parece una URL de imagen real: puede ser una
+     * URL remota (http/https) o una ruta local del sitio (p. ej. /img/...).
+     * Solo se aceptan extensiones de imagen conocidas para no romper la pagina
+     * con una URL mal escrita. Con esto decidimos si mostramos la foto real o
+     * la ilustracion de respaldo (el icono por tipo de inmueble).
+     */
+    public boolean esUrlDeImagen(String url) {
+        if (url == null) return false;
+        String u = url.trim().toLowerCase();
+        boolean esImagen = u.endsWith(".jpg") || u.endsWith(".jpeg")
+                        || u.endsWith(".png") || u.endsWith(".gif")
+                        || u.endsWith(".webp") || u.endsWith(".bmp")
+                        || u.endsWith(".svg");
+        if (!esImagen) return false;
+        return u.startsWith("http://") || u.startsWith("https://") || u.startsWith("/");
+    }
+
+    /**
+     * Ajusta el src de una imagen local. Las URLs guardadas como /img/...
+     * son relativas al contexto de la aplicacion, asi que se les antepone el
+     * context path (p. ej. /InmoWeb) para que el navegador las encuentre.
+     * Las URLs remotas (http/https) se dejan tal cual.
+     */
+    public String urlImagen(String url, String ctx) {
+        if (url != null && url.startsWith("/") && !url.startsWith("//")) {
+            return (ctx == null ? "" : ctx) + url;
+        }
+        return url;
+    }
+
+    /** Icono de Bootstrap Icons que representa cada tipo de inmueble. */
+    public String iconoTipo(String tipo) {
+        if (tipo == null) return "bi-house-door-fill";
+        String t = tipo.toLowerCase();
+        if (t.contains("apart"))   return "bi-building";
+        if (t.contains("local"))   return "bi-shop";
+        if (t.contains("oficina")) return "bi-briefcase-fill";
+        if (t.contains("terreno") || t.contains("lote")) return "bi-map-fill";
+        if (t.contains("bodega"))  return "bi-boxes";
+        if (t.contains("finca") || t.contains("campestre")) return "bi-tree-fill";
+        return "bi-house-door-fill"; // casa y similares
+    }
+
+    /** Clase CSS (fondo degradado) asociada a cada tipo de inmueble, para que
+     *  la tarjeta se vea distinta segun el tipo aunque no haya foto real. */
+    public String colorTipo(String tipo) {
+        if (tipo == null) return "tipo-1";
+        int hash = Math.abs(tipo.toLowerCase().hashCode());
+        return "tipo-" + (hash % 5 + 1);
+    }
+%>

@@ -1,0 +1,117 @@
+<%--
+    cabecera.jspf - Encabezado HTML + barra de navegacion Bootstrap 5.
+    La pagina debe definir antes la variable tituloPagina.
+    Funciona tanto para visitantes (sin sesion) como para usuarios logueados.
+--%>
+<%@ page pageEncoding="UTF-8" %>
+<%
+    // Estos datos de sesion se leen aqui (no en seguridad.jspf) porque
+    // la cabecera se usa tambien en paginas publicas donde no hay sesion.
+    Integer idUsuarioSesion = (Integer) session.getAttribute("idUsuario");
+    String  correoSesion    = (String)  session.getAttribute("correo");
+    String  nombreSesion    = (String)  session.getAttribute("nombre");
+    String  rolPrincipal    = (String)  session.getAttribute("rolPrincipal");
+    String  ctx = request.getContextPath();
+    boolean logueado = idUsuarioSesion != null;
+%>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= tituloPagina %> | InmoWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="<%= ctx %>/css/estilos.css" rel="stylesheet">
+    <script>
+      // Si una foto no carga, la reemplaza por la ilustracion de respaldo
+      // (icono con el color segun el tipo de inmueble) para no dejar una imagen rota.
+      function imgFallback(img, icono, color, claseExtra) {
+        if (!img || img.getAttribute("data-fallback") === "1") return;
+        img.setAttribute("data-fallback", "1");
+        var div = document.createElement("div");
+        div.className = "img-tipo " + color + (claseExtra ? " " + claseExtra : "");
+        div.innerHTML = "<i class='bi " + icono + "'></i>";
+        if (img.getAttribute("style")) div.setAttribute("style", img.getAttribute("style"));
+        if (img.parentNode) img.parentNode.replaceChild(div, img);
+      }
+    </script>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="<%= ctx %>/index.jsp">
+        <i class="bi bi-buildings"></i> InmoWeb
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="menu">
+      <ul class="navbar-nav me-auto">
+        <% if (!logueado) { %>
+        <li class="nav-item">
+            <a class="nav-link" href="<%= ctx %>/index.jsp#inicio">
+                <i class="bi bi-house-door"></i> Inicio</a></li>
+        <li class="nav-item">
+            <a class="nav-link" href="<%= ctx %>/propiedades/catalogo.jsp">
+                <i class="bi bi-search"></i> Propiedades</a></li>
+        <li class="nav-item">
+            <a class="nav-link" href="<%= ctx %>/index.jsp#sobre-nosotros">
+                <i class="bi bi-info-circle"></i> Sobre nosotros</a></li>
+        <li class="nav-item">
+            <a class="nav-link" href="<%= ctx %>/index.jsp#servicios">
+                <i class="bi bi-gear"></i> Servicios</a></li>
+        <li class="nav-item">
+            <a class="nav-link" href="<%= ctx %>/index.jsp#opiniones">
+                <i class="bi bi-chat-quote"></i> Opiniones</a></li>
+        <li class="nav-item">
+            <a class="nav-link" href="<%= ctx %>/index.jsp#contacto">
+                <i class="bi bi-headset"></i> Contacto</a></li>
+        <% } else { %>
+        <li class="nav-item">
+            <a class="nav-link" href="<%= ctx %>/propiedades/catalogo.jsp">
+                <i class="bi bi-search"></i> Catálogo</a></li>
+        <% } %>
+
+        <% if (logueado && "CLIENTE".equals(rolPrincipal)) { %>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/cliente/panel.jsp"><i class="bi bi-speedometer2"></i> Mi panel</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/cliente/favoritos.jsp"><i class="bi bi-heart"></i> Favoritos</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/cliente/citas.jsp"><i class="bi bi-calendar-check"></i> Mis citas</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/cliente/solicitudes.jsp"><i class="bi bi-file-earmark-text"></i> Mis solicitudes</a></li>
+        <% } %>
+
+        <% if (logueado && "INMOBILIARIA".equals(rolPrincipal)) { %>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/inmobiliaria/panel.jsp"><i class="bi bi-speedometer2"></i> Mi panel</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/inmobiliaria/propiedades.jsp"><i class="bi bi-house-gear"></i> Mis propiedades</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/inmobiliaria/citas.jsp"><i class="bi bi-calendar-check"></i> Citas</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/inmobiliaria/solicitudes.jsp"><i class="bi bi-file-earmark-text"></i> Solicitudes</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/inmobiliaria/reportes.jsp"><i class="bi bi-graph-up"></i> Reportes</a></li>
+        <% } %>
+
+        <% if (logueado && "ADMINISTRADOR".equals(rolPrincipal)) { %>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/admin/panel.jsp"><i class="bi bi-speedometer2"></i> Panel</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/admin/usuarios.jsp"><i class="bi bi-people"></i> Usuarios</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/admin/catalogos.jsp"><i class="bi bi-tags"></i> Catálogos</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/admin/reportes.jsp"><i class="bi bi-graph-up"></i> Reportes</a></li>
+        <li class="nav-item"><a class="nav-link" href="<%= ctx %>/admin/auditoria.jsp"><i class="bi bi-shield-check"></i> Auditoria</a></li>
+        <% } %>
+      </ul>
+
+      <% if (logueado) { %>
+        <span class="navbar-text text-white me-3">
+            <a href="<%= ctx %>/perfil.jsp" class="text-white text-decoration-none">
+                <i class="bi bi-person-circle"></i> <%= esc(nombreSesion) %></a>
+            <span class="badge text-bg-info ms-1"><%= rolPrincipal %></span>
+        </span>
+        <a class="btn btn-outline-light btn-sm" href="<%= ctx %>/logout.jsp">
+            <i class="bi bi-box-arrow-right"></i> Salir</a>
+      <% } else { %>
+        <a class="btn btn-outline-light btn-sm me-2" href="<%= ctx %>/login.jsp">
+            <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a>
+        <a class="btn btn-info btn-sm text-white" href="<%= ctx %>/registro.jsp">
+            <i class="bi bi-person-plus"></i> Registrarme</a>
+      <% } %>
+    </div>
+  </div>
+</nav>
+<main class="container my-4">

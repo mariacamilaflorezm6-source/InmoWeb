@@ -1,0 +1,10 @@
+Esta carpeta almacena los PDF que los clientes suben al radicar una
+solicitud de compra/arriendo (cliente/radicar_solicitud.jsp).
+
+No se sirve directamente por URL (esta dentro de WEB-INF), por eso los
+PDF solo se pueden abrir a traves de /documento_descarga.jsp?id=N, que
+valida que quien los pide sea el cliente dueno, el agente de la
+inmobiliaria correspondiente, o un administrador.
+
+Asegurese de que el usuario con el que corre Tomcat tenga permiso de
+escritura sobre esta carpeta.

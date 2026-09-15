@@ -1,0 +1,81 @@
+<%--
+    conexion.jspf - Fragmento de conexion a la base de datos PostgreSQL.
+    Proyecto: InmoWeb
+    Se incluye de forma ESTATICA en cada pagina que necesite la base de datos:
+        <%@ include file="/WEB-INF/jspf/conexion.jspf" %>
+
+    CONFIGURABLE: para cambiar entre la base de datos LOCAL y la de NEON
+    (en linea), solo se cambia el valor de la constante ENTORNO_ACTIVO,
+    unos centimetros mas abajo. El resto del proyecto (todas las paginas
+    y controladores) nunca vuelve a mencionar la cadena de conexion,
+    tal como exige el enunciado del parcial.
+--%>
+<%@ page import="java.sql.*" pageEncoding="UTF-8" %>
+<%!
+    /* =====================================================================
+       ENTORNO_ACTIVO decide cual de los dos bloques de abajo se usa:
+         "LOCAL" -> PostgreSQL instalado en este computador (pgAdmin local)
+         "NEON"  -> PostgreSQL en linea (Neon)
+       ===================================================================== */
+    public static final String ENTORNO_ACTIVO = "NEON";
+
+    // ---------- Conexion LOCAL (pgAdmin -> servidor local) ----------
+    private static final String DB_DRIVER = "org.postgresql.Driver";
+    private static final String LOCAL_URL =
+        "jdbc:postgresql://localhost:5432/inmoweb_local?sslmode=disable";
+    private static final String LOCAL_USUARIO = "postgres";
+    private static final String LOCAL_CLAVE   = "npg_ihZIHT0rvBo8";
+
+    // ---------- Conexion NEON (en linea) ----------
+    private static final String NEON_URL =
+        "jdbc:postgresql://ep-falling-firefly-aynzj6au-pooler.c-5.us-east-2.aws.neon.tech/neondb"
+        + "?sslmode=require&channel_binding=require";
+    private static final String NEON_USUARIO = "neondb_owner";
+    private static final String NEON_CLAVE   = "npg_ihZIHT0rvBo8";
+
+    /**
+     * Abre y devuelve una conexion nueva con la base de datos activa
+     * segun ENTORNO_ACTIVO. Quien la llama es responsable de cerrarla
+     * (preferiblemente con cerrar()).
+     */
+    public Connection abrirConexion() throws SQLException {
+        String url, usuario, clave;
+        if ("LOCAL".equals(ENTORNO_ACTIVO)) {
+            url = LOCAL_URL; usuario = LOCAL_USUARIO; clave = LOCAL_CLAVE;
+        } else {
+            url = NEON_URL; usuario = NEON_USUARIO; clave = NEON_CLAVE;
+        }
+        try {
+            Class.forName(DB_DRIVER);
+        } catch (ClassNotFoundException ex) {
+            throw new SQLException(
+                "No se encontro el driver de PostgreSQL. Agregue postgresql-42.x.x.jar "
+                + "a la carpeta WEB-INF/lib del proyecto.", ex);
+        }
+        Connection con = DriverManager.getConnection(url, usuario, clave);
+        // Ajusta la zona horaria de la sesion a Colombia (Neon usa UTC por defecto)
+        Statement stTz = con.createStatement();
+        stTz.execute("SET TIME ZONE 'America/Bogota'");
+        stTz.close();
+        return con;
+    }
+
+    /**
+     * Cierra en orden inverso cualquier recurso JDBC (ResultSet, Statement,
+     * Connection) sin obligar a escribir try/catch en cada pagina.
+     */
+    public void cerrar(AutoCloseable... recursos) {
+        for (int i = recursos.length - 1; i >= 0; i--) {
+            if (recursos[i] != null) {
+                try { recursos[i].close(); } catch (Exception ignorada) { }
+            }
+        }
+    }
+
+    /** Deshace la transaccion en curso sin propagar errores secundarios. */
+    public void deshacer(Connection con) {
+        if (con != null) {
+            try { con.rollback(); } catch (SQLException ignorada) { }
+        }
+    }
+%>
