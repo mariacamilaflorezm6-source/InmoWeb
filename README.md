@@ -14,11 +14,11 @@ El proyecto sigue el patrón de diseño **MVC (Modelo-Vista-Controlador)**:
 2. **Controlador:** Archivos de control y Filtros (`ControlAccesoFilter`) para la gestión de rutas y seguridad.
 3. **Modelo:** Estructura relacional en PostgreSQL y conexión centralizada para el manejo de consultas y transacciones de datos.
 
-## 📊 Estructura de la Base de Datos
+## Estructura de la Base de Datos
 El esquema consta de **16 tablas** diseñadas bajo estrictos principios relacionales:
 * **Seguridad y Usuarios:** `rol`, `usuario`, `usuario_rol`, `perfil`, `inmobiliaria`, `auditoria`
 * **Catálogos y Propiedades:** `ciudad`, `tipo_propiedad`, `propiedad`, `imagen_propiedad`, `caracteristica`, `propiedad_caracteristica`
 * **Transacciones:** `cita`, `solicitud`, `documento_solicitud`, `favorito`
 
-## 👥 Autor
+## Autor
 * **Maria Camila**
